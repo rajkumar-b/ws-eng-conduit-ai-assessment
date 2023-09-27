@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/c
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { AuthMiddleware } from '../user/auth.middleware';
 import { User } from '../user/user.entity';
+import { Tag } from '../tag/tag.entity';
 import { UserModule } from '../user/user.module';
 import { ArticleController } from './article.controller';
 import { Article } from './article.entity';
@@ -10,7 +11,7 @@ import { Comment } from './comment.entity';
 
 @Module({
   controllers: [ArticleController],
-  imports: [MikroOrmModule.forFeature({ entities: [Article, Comment, User] }), UserModule],
+  imports: [MikroOrmModule.forFeature({ entities: [Article, Comment, User, Tag] }), UserModule],
   providers: [ArticleService],
 })
 export class ArticleModule implements NestModule {

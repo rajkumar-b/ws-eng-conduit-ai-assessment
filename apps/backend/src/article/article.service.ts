@@ -4,6 +4,7 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/mysql';
 
 import { User } from '../user/user.entity';
+import { Tag } from '../tag/tag.entity';
 import { Article } from './article.entity';
 import { IArticleRO, IArticlesRO, ICommentsRO } from './article.interface';
 import { Comment } from './comment.entity';
@@ -19,6 +20,8 @@ export class ArticleService {
     private readonly commentRepository: EntityRepository<Comment>,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
+    @InjectRepository(Tag)
+    private readonly tagRepository: EntityRepository<Tag>,
   ) {}
 
   async findAll(userId: number, query: Record<string, string>): Promise<IArticlesRO> {
@@ -154,7 +157,26 @@ export class ArticleService {
       { populate: ['followers', 'favorites', 'articles'] },
     );
     const article = new Article(user!, dto.title, dto.description, dto.body);
-    article.tagList.push(...dto.tagList);
+
+    // Convert comma-separated string to array of strings
+    const tags = dto.tagList.split(',').map(tag => tag.trim());
+
+    const tagEntities: Tag[] = [];
+
+    for (const tagName of tags) {
+      let tagEntity = await this.tagRepository.findOne({ tag: tagName });
+
+      if (!tagEntity) {
+        tagEntity = new Tag();
+        tagEntity.tag = tagName;
+        await this.em.persist(tagEntity);
+      }
+
+      tagEntities.push(tagEntity);
+    }
+
+    article.tagList.push(...tags);
+
     user?.articles.add(article);
     await this.em.flush();
 
