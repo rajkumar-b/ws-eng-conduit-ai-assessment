@@ -9,3 +9,11 @@ export interface User {
 export interface UserResponse {
   user: User;
 }
+
+export interface UserStat {
+  id: number;
+  username: string;
+  articlesCount: number;
+  likesReceivedCount: number;
+  firstArticleDate: Date | null;
+}
