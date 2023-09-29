@@ -6,7 +6,7 @@ import { EntityManager, wrap } from '@mikro-orm/core';
 import { SECRET } from '../config';
 import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { User } from './user.entity';
-import { IUserRO } from './user.interface';
+import { IUserRO, IUserStatsRO } from './user.interface';
 import { UserRepository } from './user.repository';
 
 @Injectable()
@@ -113,5 +113,33 @@ export class UserService {
     };
 
     return { user: userRO };
+  }
+
+  private sortUserStats(userStats: IUserStatsRO[]): IUserStatsRO[] {
+    return userStats.sort((a, b) => {
+      if (a.likesReceivedCount !== b.likesReceivedCount) {
+        return b.likesReceivedCount - a.likesReceivedCount;
+      }
+
+      if (a.firstArticleDate && b.firstArticleDate) {
+        return b.firstArticleDate.getTime() - a.firstArticleDate.getTime();
+      } else if (a.firstArticleDate) {
+        return -1;
+      } else if (b.firstArticleDate) {
+        return 1;
+      }
+
+      if (a.articlesCount !== b.articlesCount) {
+        return b.articlesCount - a.articlesCount;
+      }
+
+      return a.username.localeCompare(b.username);
+    });
+  }
+
+  async getUsersWithStats(): Promise<IUserStatsRO[]> {
+    const userStats = await this.userRepository.getUsersWithStats();
+    const sortedUserStats = this.sortUserStats(userStats);
+    return sortedUserStats;
   }
 }
