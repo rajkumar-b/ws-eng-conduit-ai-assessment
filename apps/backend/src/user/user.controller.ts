@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpException, Param, Post, Put, UsePipe
 import { ValidationPipe } from '../shared/pipes/validation.pipe';
 import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { User } from './user.decorator';
-import { IUserRO } from './user.interface';
+import { IUserRO, IUserStatsRO } from './user.interface';
 import { UserService } from './user.service';
 
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -47,5 +47,10 @@ export class UserController {
     const { email, username, bio, image } = foundUser;
     const user = { email, token, username, bio, image };
     return { user };
+  }
+
+  @Get('users/stats')
+  async getUsersWithStats(): Promise<IUserStatsRO[]> {
+    return this.userService.getUsersWithStats();
   }
 }

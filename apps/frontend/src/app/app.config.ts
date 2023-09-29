@@ -23,6 +23,10 @@ export const appConfig: ApplicationConfig = {
         loadChildren: () => import('@realworld/home/src/lib/home.routes').then((home) => home.HOME_ROUTES),
       },
       {
+        path: 'roster',
+        loadComponent: () => import('@realworld/auth/feature-auth').then((m) => m.RosterComponent),
+      },
+      {
         path: 'login',
         loadComponent: () => import('@realworld/auth/feature-auth').then((m) => m.LoginComponent),
       },

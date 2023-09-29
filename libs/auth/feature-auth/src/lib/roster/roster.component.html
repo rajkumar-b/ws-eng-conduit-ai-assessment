@@ -1,0 +1,32 @@
+<div class="roster-page">
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-8 offset-md-2 col-xs-12">
+        <div class="roster-header">
+          <h1>Conduit Roster</h1>
+        </div>
+
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Total Articles Authored</th>
+              <th>Total Likes Received</th>
+              <th>Date of First Article</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users$ | async">
+              <td>
+                <a [routerLink]="['/profile', user.username]">{{ user.username }}</a>
+              </td>
+              <td>{{ user.articlesCount }}</td>
+              <td>{{ user.likesReceivedCount }}</td>
+              <td>{{ user.firstArticleDate | date:'mediumDate' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
