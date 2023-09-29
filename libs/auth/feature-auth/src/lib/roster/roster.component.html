@@ -22,7 +22,7 @@
               </td>
               <td>{{ user.articlesCount }}</td>
               <td>{{ user.likesReceivedCount }}</td>
-              <td>{{ user.firstArticleDate }}</td>
+              <td>{{ user.firstArticleDate | date:'mediumDate' }}</td>
             </tr>
           </tbody>
         </table>
