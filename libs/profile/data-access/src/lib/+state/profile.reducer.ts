@@ -10,6 +10,7 @@ export const profileInitialState: ProfileState = {
   image: '',
   following: false,
   loading: false,
+  email: ''
 };
 
 export const profileFeature = createFeature({

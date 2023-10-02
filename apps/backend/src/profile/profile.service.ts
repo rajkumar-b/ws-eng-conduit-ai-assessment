@@ -45,6 +45,7 @@ export class ProfileService {
       image: foundProfile.image,
       username: foundProfile.username,
       following: foundProfile.followers.contains(follower),
+      email: foundProfile.email,
     };
 
     return { profile };
@@ -79,6 +80,7 @@ export class ProfileService {
       following: true,
       image: followingUser.image,
       username: followingUser.username,
+      email: followerUser.email,
     };
 
     return { profile };
@@ -113,6 +115,7 @@ export class ProfileService {
       following: false,
       image: followingUser.image,
       username: followingUser.username,
+      email: followerUser.email,
     };
 
     return { profile };

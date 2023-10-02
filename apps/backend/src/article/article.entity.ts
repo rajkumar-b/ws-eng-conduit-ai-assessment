@@ -5,6 +5,7 @@ import {
   EntityDTO,
   ManyToOne,
   OneToMany,
+  ManyToMany,
   PrimaryKey,
   Property,
   wrap,
@@ -43,6 +44,9 @@ export class Article {
   @ManyToOne(() => User)
   author: User;
 
+  @ManyToMany(() => User)
+  coAuthors = new Collection<User>(this);
+
   @OneToMany(() => Comment, (comment) => comment.article, { eager: true, orphanRemoval: true })
   comments = new Collection<Comment>(this);
 
@@ -61,6 +65,8 @@ export class Article {
     const o = wrap<Article>(this).toObject() as ArticleDTO;
     o.favorited = user && user.favorites.isInitialized() ? user.favorites.contains(this) : false;
     o.author = this.author.toJSON(user);
+    // Include coAuthors' DTOs
+    o.coAuthors = this.coAuthors.isInitialized() ? this.coAuthors.getItems().map(coAuthor => coAuthor.toJSON()) : [];
 
     return o;
   }

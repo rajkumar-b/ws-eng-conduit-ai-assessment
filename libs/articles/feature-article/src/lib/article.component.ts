@@ -51,11 +51,11 @@ export class ArticleComponent implements OnInit, OnDestroy {
       .select(selectAuthState)
       .pipe(
         filter((auth) => auth.loggedIn),
-        (auth$) => combineLatest([auth$, this.store.select(articleQuery.getAuthorUsername)]),
+        (auth$) => combineLatest([auth$, this.store.select(articleQuery.getAuthors)]),
         untilDestroyed(this),
       )
-      .subscribe(([auth, username]) => {
-        this.canModify = auth.user.username === username;
+      .subscribe(([auth, authors]) => {
+        this.canModify = authors.includes(auth.user.email);
       });
   }
 

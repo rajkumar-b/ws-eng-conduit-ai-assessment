@@ -1,7 +1,8 @@
 import { DynamicFormComponent, Field, formsActions, ListErrorsComponent, ngrxFormsQuery } from '@realworld/core/forms';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { OnDestroy } from '@angular/core';
+import { OnDestroy, Input } from '@angular/core';
 import { Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Store } from '@ngrx/store';
 import { articleActions, articleEditActions, articleQuery } from '@realworld/articles/data-access';
@@ -31,6 +32,12 @@ const structure: Field[] = [
     placeholder: 'Enter Tags',
     validator: [],
   },
+  {
+    type: 'INPUT',
+    name: 'coAuthors',
+    placeholder: 'Enter Co-Authors (comma-separated emails)',
+    validator: [],
+  },
 ];
 
 @UntilDestroy()
@@ -43,18 +50,42 @@ const structure: Field[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ArticleEditComponent implements OnInit, OnDestroy {
+  @Input() isEditMode: boolean = false; // Input property to indicate the mode
   structure$ = this.store.select(ngrxFormsQuery.selectStructure);
   data$ = this.store.select(ngrxFormsQuery.selectData);
+  formStructure: Field[] = [];
 
-  constructor(private readonly store: Store) {}
+  constructor(private readonly store: Store, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    this.store.dispatch(formsActions.setStructure({ structure }));
+    // Conditionally set the structure based on mode
+    this.route.queryParams.subscribe(params => {
+      const isEditMode = params['isEditMode'];
+      this.isEditMode = isEditMode !== undefined && isEditMode === 'true';
+    });
+
+    if (this.isEditMode) {
+      this.formStructure = [...structure];
+    } else {
+      this.formStructure = [...structure.filter(field => field.name !== 'coAuthors')]; // Exclude co-authors field
+    }
+    
+    this.store.dispatch(formsActions.setStructure({ structure: this.formStructure }));
 
     this.store
-      .select(articleQuery.selectData)
-      .pipe(untilDestroyed(this))
-      .subscribe((article) => this.store.dispatch(formsActions.setData({ data: article })));
+    .select(articleQuery.selectData)
+    .pipe(untilDestroyed(this))
+    .subscribe((article) => {
+      if (article && article.coAuthors && article.coAuthors.length > 0) {
+        const coAuthorEmails = article.coAuthors.map(coAuthor => coAuthor.email).join(',');
+        const updatedData = { ...article, coAuthors: coAuthorEmails };
+        this.store.dispatch(formsActions.setData({ data: updatedData }));
+      } else {
+        const updatedData = { ...article, coAuthors: '' };
+        this.store.dispatch(formsActions.setData({ data: updatedData }));
+      }
+    });
+
   }
 
   updateForm(changes: any) {

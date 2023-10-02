@@ -1,37 +1,76 @@
 <div class="article-meta">
-  <a [routerLink]="['/profile', article.author.username]">
-    <img [src]="article.author.image" />
-  </a>
-  <div class="info">
-    <a class="author" [routerLink]="['/profile', article.author.username]">
-      {{ article.author.username }}
+  <div class="author-info">
+    <a [routerLink]="['/profile', article.author.username]">
+      <img [src]="article.author.image" />
     </a>
-    <span class="date">{{ article.createdAt | date : 'longDate' }}</span>
+    <div class="info">
+      <a class="author" [routerLink]="['/profile', article.author.username]">
+        {{ article.author.username }}
+      </a>
+      <span class="date">{{ article.createdAt | date : 'longDate' }}</span>
+    </div>
+    <span class="follow-button" [hidden]="article.author.email === currentUser.email">
+      <button
+        class="btn btn-sm action-btn"
+        [ngClass]="{
+          'btn-outline-secondary': !article.author.following,
+          'btn-secondary': article.author.following
+        }"
+        (click)="toggleFollow(article.author)"
+      >
+        <i class="ion-plus-round"></i>
+        &nbsp; {{ article.author.following ? 'Unfollow' : 'Follow' }}
+        {{ article.author.username }}
+      </button>
+    </span>
   </div>
+  <!-- Co-Authors Section (if present) -->
+  <div *ngIf="article.coAuthors && article.coAuthors.length > 0" class="co-author-info">
+    <ng-container *ngFor="let coAuthor of article.coAuthors">
+      <div class="co-author">
+        <a>
+          <img [src]="coAuthor.image" />
+        </a>
+        <div class="info">
+          <a data-e2e-id="article-author" class="author" [routerLink]="['/profile', coAuthor.username]">
+            {{ coAuthor.username }}
+          </a>
+        </div>
+        <span class="follow-button" [hidden]="coAuthor.email === currentUser.email">
+          <button
+            class="btn btn-sm action-btn"
+            [ngClass]="{
+              'btn-outline-secondary': !coAuthor.following,
+              'btn-secondary': coAuthor.following
+            }"
+            (click)="toggleFollow(coAuthor)"
+          >
+            <i class="ion-plus-round"></i>
+            &nbsp; {{ coAuthor.following ? 'Unfollow' : 'Follow' }}
+            {{ coAuthor.username }}
+          </button>
+        </span>
+      </div>
+    </ng-container>
+  </div>
+  
 
   <span [hidden]="!canModify">
-    <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/editor', article.slug]">
+    <a class="btn btn-sm btn-outline-secondary" (click)="editArticle()">
       <i class="ion-edit"></i> Edit Article
     </a>
 
     <button class="btn btn-sm btn-outline-danger" (click)="deleteArticle()">
       <i class="ion-trash-a"></i> Delete Article
     </button>
+
+    <!-- Error message div for locked article -->
+    <div *ngIf="articleLocked" class="error-message">
+      <p>This article is currently locked by another user. Please try again later.</p>
+    </div>
   </span>
 
   <span [hidden]="canModify">
-    <button
-      class="btn btn-sm action-btn"
-      [ngClass]="{
-        'btn-outline-secondary': !article.author.following,
-        'btn-secondary': article.author.following
-      }"
-      (click)="toggleFollow()"
-    >
-      <i class="ion-plus-round"></i>
-      &nbsp; {{ article.author.following ? 'Unfollow' : 'Follow' }}
-      {{ article.author.username }}
-    </button>
     &nbsp;&nbsp;
     <button
       class="btn btn-sm btn-outline-primary"

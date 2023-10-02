@@ -11,6 +11,19 @@
         {{ article.createdAt | date : 'longDate' }}
       </span>
     </div>
+    <!-- Co-Authors Section (if present) -->
+    <div *ngIf="article.coAuthors && article.coAuthors.length > 0" class="co-authors">
+      <ng-container *ngFor="let coAuthor of article.coAuthors">
+        <a>
+          <img [src]="coAuthor.image" />
+        </a>
+        <div class="info">
+          <a data-e2e-id="article-author" class="author" [routerLink]="['/profile', coAuthor.username]">
+            {{ coAuthor.username }}
+          </a>
+        </div>
+      </ng-container>
+    </div>
     <button
       [ngClass]="{
         'btn-outline-primary': !article.favorited,

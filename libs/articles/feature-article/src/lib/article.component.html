@@ -4,6 +4,7 @@
       <h1 data-e2e-id="article-title">{{ (article$ | async).title }}</h1>
       <cdt-article-meta
         [article]="article$ | async"
+        [currentUser]="currentUser$ | async"
         (follow)="follow($event)"
         (unfollow)="unfollow($event)"
         (favorite)="favorite($event)"
@@ -25,6 +26,7 @@
     <div class="article-actions">
       <cdt-article-meta
         [article]="article$ | async"
+        [currentUser]="currentUser$ | async"
         (follow)="follow($event)"
         (unfollow)="unfollow($event)"
         (favorite)="favorite($event)"
