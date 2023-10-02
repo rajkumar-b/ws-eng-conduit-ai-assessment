@@ -31,6 +31,11 @@ export class ArticleController {
     return this.articleService.findOne(userId, { slug });
   }
 
+  @Get(':slug/lock')
+  async lock(@User('id') userId: number, @Param('slug') slug: string): Promise<Boolean> {
+    return this.articleService.lockArticle(userId, slug );
+  }
+
   @Get(':slug/comments')
   async findComments(@Param('slug') slug: string): Promise<ICommentsRO> {
     return this.articleService.findComments(slug);

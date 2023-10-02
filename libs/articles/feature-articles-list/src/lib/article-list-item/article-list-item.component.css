@@ -1,0 +1,24 @@
+.article-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .co-authors {
+    display: flex;
+  }
+  
+  .author-section,
+  .co-authors {
+    display: flex;
+    align-items: center;
+  }
+  
+  .co-authors a {
+    margin-right: 8px; /* Adjust as needed */
+  }
+  
+  .btn {
+    margin-left: auto; /* This will push the button to the rightmost edge */
+  }
+  

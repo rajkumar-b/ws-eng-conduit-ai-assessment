@@ -47,6 +47,10 @@ export class ArticlesService {
     return this.apiService.post<ArticleResponse, ArticleResponse>('/articles/', { article: article });
   }
 
+  lockArticle(slug: string): Observable<boolean> {
+    return this.apiService.get<boolean>('/articles/' + slug + '/lock');
+  }
+
   // TODO: remove any
   private toHttpParams(params: any) {
     return Object.getOwnPropertyNames(params).reduce((p, key) => p.set(key, params[key]), new HttpParams());

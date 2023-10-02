@@ -24,7 +24,7 @@ export class User {
   @Property()
   username: string;
 
-  @Property({ hidden: true })
+  @Property()
   @IsEmail()
   email: string;
 
@@ -56,6 +56,9 @@ export class User {
 
   @OneToMany(() => Article, (article) => article.author, { hidden: true })
   articles = new Collection<Article>(this);
+
+  @ManyToMany(() => Article, article => article.coAuthors)
+  coAuthoredArticles = new Collection<Article>(this);
 
   constructor(username: string, email: string, password: string) {
     this.username = username;

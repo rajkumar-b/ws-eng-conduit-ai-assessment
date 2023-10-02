@@ -10,6 +10,7 @@ import { User } from './src/user/user.entity';
 import { Tag } from './src/tag/tag.entity';
 import { Article } from './src/article/article.entity';
 import { Comment } from './src/article/comment.entity';
+import { ArticleLock } from './src/article/lock.entity';
 import { InitialMigration } from './src/migrations/InitialMigration';
 
 export default defineConfig({
@@ -26,7 +27,7 @@ export default defineConfig({
       },
     ],
   },
-  entities: [User, Tag, Article, Comment],
+  entities: [User, Tag, Article, Comment, ArticleLock],
   discovery: { disableDynamicFileAccess: true },
   seeder: {
     pathTs: join(__dirname, 'src', 'seeders'),

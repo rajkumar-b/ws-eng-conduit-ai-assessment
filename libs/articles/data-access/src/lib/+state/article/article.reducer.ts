@@ -28,7 +28,9 @@ export const articleInitialState: ArticleState = {
       image: '',
       following: false,
       loading: false,
+      email: ''
     },
+    coAuthors: [],
   },
   comments: [],
   loaded: false,
@@ -74,9 +76,28 @@ export const articleFeature = createFeature({
       comments: articleInitialState.comments,
     })),
     on(articleActions.followSuccess, articleActions.unfollowSuccess, (state, action) => {
-      const data: Article = { ...state.data, author: action.profile };
-      return { ...state, data };
-    }),
+      const isMainAuthor = state.data.author.username === action.profile.username;
+    
+      if (isMainAuthor) {
+        const updatedAuthor = { ...state.data.author, following: action.profile.following };
+        const updatedData = { ...state.data, author: updatedAuthor };
+        return { ...state, data: updatedData };
+      } else {
+        const updatedCoAuthors = state.data.coAuthors.map(coAuthor => {
+          if (coAuthor.username === action.profile.username) {
+            return { ...coAuthor, following: action.profile.following };
+          }
+          return coAuthor;
+        });
+    
+        const updatedData = {
+          ...state.data,
+          coAuthors: updatedCoAuthors
+        };
+    
+        return { ...state, data: updatedData };
+      }
+    }),     
     on(articlesActions.favoriteSuccess, articlesActions.unfavoriteSuccess, (state, action) => ({
       ...state,
       data: action.article,

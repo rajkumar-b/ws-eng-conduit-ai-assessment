@@ -1,9 +1,10 @@
 import { inject } from '@angular/core';
 import { Actions, concatLatestFrom, createEffect, ofType } from '@ngrx/effects';
-import { catchError, concatMap, exhaustMap, map, of, tap } from 'rxjs';
+import { catchError, concatMap, exhaustMap, map, of, tap, switchMap, combineLatest } from 'rxjs';
 import { ActionsService } from '../../services/actions.service';
 import { articleActions } from './article.actions';
 import { ArticlesService } from '../../services/articles.service';
+import { ProfileService } from '@realworld/profile/data-access';
 import { formsActions, ngrxFormsQuery } from '@realworld/core/forms/src';
 import { Store } from '@ngrx/store';
 import { Router } from '@angular/router';
@@ -80,19 +81,38 @@ export const addCommentSuccess$ = createEffect(
 );
 
 export const loadArticle$ = createEffect(
-  (actions$ = inject(Actions), articlesService = inject(ArticlesService)) => {
+  (actions$ = inject(Actions), articlesService = inject(ArticlesService), profileService = inject(ProfileService)) => {
     return actions$.pipe(
       ofType(articleActions.loadArticle),
-      concatMap((action) =>
+      switchMap((action) =>
         articlesService.getArticle(action.slug).pipe(
-          map((response) => articleActions.loadArticleSuccess({ article: response.article })),
-          catchError((error) => of(articleActions.loadArticleFailure(error))),
+          switchMap((response) => {
+            const article = response.article;
+            const authorUsername = article.author.username;
+            const coAuthorsUsernames = article.coAuthors.map((coAuthor) => coAuthor.username);
+
+            const authorProfile$ = profileService.getProfile(authorUsername);
+            const coAuthorsProfiles$ = combineLatest(
+              coAuthorsUsernames.map((username) => profileService.getProfile(username))
+            );
+
+            return combineLatest([of(article), authorProfile$, coAuthorsProfiles$]).pipe(
+              map(([article, authorProfile, coAuthorsProfiles]) => {
+                article.author = authorProfile;
+                article.coAuthors = coAuthorsProfiles.map((profileResponse) => profileResponse);
+                return article;
+              })
+            );
+          }),
+          map((article) => articleActions.loadArticleSuccess({ article })),
+          catchError((error) => of(articleActions.loadArticleFailure(error)))
         ),
-      ),
+      )
     );
   },
   { functional: true },
 );
+
 
 export const loadComments$ = createEffect(
   (actions$ = inject(Actions), articlesService = inject(ArticlesService)) => {
@@ -132,4 +152,19 @@ export const deleteArticleSuccess$ = createEffect(
     );
   },
   { functional: true, dispatch: false },
+);
+
+export const acquireArticleLock$ = createEffect(
+  (actions$ = inject(Actions), articlesService = inject(ArticlesService)) => {
+    return actions$.pipe(
+      ofType(articleActions.acquireArticleLock),
+      concatMap((action) =>
+        articlesService.lockArticle(action.slug).pipe(
+          map((success) => articleActions.acquireArticleLockSuccess({ success })),
+          catchError(() => of(articleActions.acquireArticleLockSuccess({ success: false }))),
+        ),
+      ),
+    );
+  },
+  { functional: true },
 );

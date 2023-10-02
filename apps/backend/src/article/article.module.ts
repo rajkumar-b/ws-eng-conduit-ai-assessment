@@ -8,10 +8,11 @@ import { ArticleController } from './article.controller';
 import { Article } from './article.entity';
 import { ArticleService } from './article.service';
 import { Comment } from './comment.entity';
+import { ArticleLock } from './lock.entity';
 
 @Module({
   controllers: [ArticleController],
-  imports: [MikroOrmModule.forFeature({ entities: [Article, Comment, User, Tag] }), UserModule],
+  imports: [MikroOrmModule.forFeature({ entities: [Article, Comment, User, Tag, ArticleLock] }), UserModule],
   providers: [ArticleService],
 })
 export class ArticleModule implements NestModule {

@@ -8,6 +8,7 @@ import { Tag } from '../tag/tag.entity';
 import { Article } from './article.entity';
 import { IArticleRO, IArticlesRO, ICommentsRO } from './article.interface';
 import { Comment } from './comment.entity';
+import { ArticleLock } from './lock.entity';
 import { CreateArticleDto, CreateCommentDto } from './dto';
 
 @Injectable()
@@ -22,13 +23,15 @@ export class ArticleService {
     private readonly userRepository: EntityRepository<User>,
     @InjectRepository(Tag)
     private readonly tagRepository: EntityRepository<Tag>,
+    @InjectRepository(ArticleLock)
+    private readonly lockRepository: EntityRepository<ArticleLock>,
   ) {}
 
   async findAll(userId: number, query: Record<string, string>): Promise<IArticlesRO> {
     const user = userId
       ? await this.userRepository.findOne(userId, { populate: ['followers', 'favorites'] })
       : undefined;
-    const qb = this.articleRepository.createQueryBuilder('a').select('a.*').leftJoin('a.author', 'u');
+    const qb = this.articleRepository.createQueryBuilder('a').select('a.*').leftJoin('a.author', 'u').leftJoinAndSelect('a.coAuthors', 'coAuthors'); 
 
     if ('tag' in query) {
       qb.andWhere({ tagList: new RegExp(query.tag) });
@@ -79,7 +82,7 @@ export class ArticleService {
     const res = await this.articleRepository.findAndCount(
       { author: { followers: userId } },
       {
-        populate: ['author'],
+        populate: ['author', 'coAuthors'],
         orderBy: { createdAt: QueryOrder.DESC },
         limit: +query.limit,
         offset: +query.offset,
@@ -94,7 +97,7 @@ export class ArticleService {
     const user = userId
       ? await this.userRepository.findOneOrFail(userId, { populate: ['followers', 'favorites'] })
       : undefined;
-    const article = await this.articleRepository.findOne(where, { populate: ['author'] });
+    const article = await this.articleRepository.findOne(where, { populate: ['author', 'coAuthors'] });
     return { article: article && article.toJSON(user) } as IArticleRO;
   }
 
@@ -188,9 +191,59 @@ export class ArticleService {
       { id: userId },
       { populate: ['followers', 'favorites', 'articles'] },
     );
+
+    // Remove 'createdAt' from articleData
+    delete articleData.createdAt;
+
     const article = await this.articleRepository.findOne({ slug }, { populate: ['author'] });
+
+    const acquireLock = await this.lockArticle(userId, slug);
+
+    if (!acquireLock) {
+      throw new Error('Article is already locked');
+    }
+
+    if (articleData.coAuthors && articleData.coAuthors.trim() !== '') {
+      // Step 1: Convert comma-separated string to array of strings
+      const coAuthorsEmails = articleData.coAuthors.split(',').map((email: string) => email.trim());
+
+      // Step 2 & 3: Check if users with given emails exist and fetch user data
+      const coAuthors = await Promise.all(coAuthorsEmails.map(async (email: string) => {
+        const coAuthor = await this.userRepository.findOne({ email });
+        if (!coAuthor) {
+          throw new Error(`User with email ${email} not found`);
+        }
+        return coAuthor;
+      }));
+
+      // Step 4: Ensure current author is not included as co-author
+      const currentAuthorIndex = coAuthors.findIndex(coAuthor => coAuthor === article?.author);
+      if (currentAuthorIndex !== -1) {
+        coAuthors.splice(currentAuthorIndex, 1);
+      }
+
+      // Step 5: Update the coAuthors field in the article entity
+      if (coAuthors.length > 0) {
+        articleData.coAuthors = coAuthors;
+      } else {
+        delete articleData.coAuthors;
+      }
+    } else {
+      if (articleData.coAuthors && articleData.coAuthors.trim() === '' && userId === article?.author.id) {
+        articleData.coAuthors = []
+      } else {
+        delete articleData.coAuthors;
+      }
+    }
+
+    if (article && !article.coAuthors.isInitialized()) {
+      await article.coAuthors.init();
+    }
+
     wrap(article).assign(articleData);
     await this.em.flush();
+
+    this.unlockArticle(slug);
 
     return { article: article!.toJSON(user!) };
   }
@@ -198,4 +251,50 @@ export class ArticleService {
   async delete(slug: string) {
     return this.articleRepository.nativeDelete({ slug });
   }
+
+  async lockArticle(userId: number, slug: string) {
+    const user = await this.userRepository.findOne({ id: userId });
+    const article = await this.articleRepository.findOne({ slug });
+  
+    if (!article || !user){
+      return false; // Article not present for lock or user not found
+    }
+  
+    const existingLock = await this.lockRepository.findOne({ article });
+  
+    if (!existingLock || existingLock.lockExpiration < new Date()) {
+      if (existingLock) {
+        await this.em.removeAndFlush(existingLock);
+      }
+      // Create a new lock if one doesn't exist or if the existing lock has expired
+      const lock = new ArticleLock(article, user, new Date(Date.now() + 5 * 60 * 1000)); // Lock for 5 minutes
+      await this.em.persistAndFlush(lock);
+      return true; // Article locked successfully
+    } else if (user.id === existingLock.lockedBy.id) {
+      // User is attempting to lock the article again, update lock expiration by 5 minutes
+      existingLock.lockExpiration = new Date(Date.now() + 5 * 60 * 1000);
+      await this.em.flush(); // Save changes
+      return true; // Lock updated successfully
+    }
+    
+    return false; // Article is already locked by another user
+  }
+  
+  async unlockArticle(slug: string) {
+    const article = await this.articleRepository.findOne({ slug });
+    
+    if (article) {
+      const existingLock = await this.lockRepository.findOne({ article });
+  
+      if (existingLock) {
+        await this.em.removeAndFlush(existingLock);
+      }
+  
+      return true; // Article unlocked successfully
+    }
+  
+    return false; // Article not found
+  }
+  
+  
 }

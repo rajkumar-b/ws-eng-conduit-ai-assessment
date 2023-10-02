@@ -59,5 +59,18 @@ export class InitialMigration extends Migration {
     this.addSql(
       'alter table `user_favorites` add constraint `user_favorites_article_id_foreign` foreign key (`article_id`) references `article` (`id`) on update cascade on delete cascade;',
     );
+
+    this.addSql('create table `article_co_authors` (`article_id` int unsigned not null, `user_id` int unsigned not null) default character set utf8mb4 engine = InnoDB;');
+    this.addSql('alter table `article_co_authors` add index `article_co_authors_article_id_index`(`article_id`);');
+    this.addSql('alter table `article_co_authors` add index `article_co_authors_user_id_index`(`user_id`);');
+    this.addSql('alter table `article_co_authors` add primary key `article_co_authors_pkey`(`article_id`, `user_id`);');
+    this.addSql('alter table `article_co_authors` add constraint `article_co_authors_article_foreign` foreign key (`article_id`) references `article` (`id`) on update cascade on delete cascade;');
+    this.addSql('alter table `article_co_authors` add constraint `article_co_authors_user_foreign` foreign key (`user_id`) references `user` (`id`) on update cascade on delete cascade;');
+
+    this.addSql('create table `article_lock` (`id` int unsigned not null auto_increment primary key, `article_id` int unsigned not null, `locked_by_id` int unsigned not null, `lock_expiration` datetime not null) default character set utf8mb4 collate utf8mb4_unicode_ci engine = InnoDB;');
+    this.addSql('alter table `article_lock` add index `lock_article_id_index`(`article_id`);');
+    this.addSql('alter table `article_lock` add constraint `lock_article_id_foreign` foreign key (`article_id`) references `article` (`id`);');
+    this.addSql('alter table `article_lock` add constraint `lock_locked_by_id_foreign` foreign key (`locked_by_id`) references `user` (`id`);');
+  
   }
 }

@@ -4,6 +4,7 @@ export interface Profile {
   image: string;
   following: boolean;
   loading: boolean;
+  email: string;
 }
 
 export interface ProfileResponse {
