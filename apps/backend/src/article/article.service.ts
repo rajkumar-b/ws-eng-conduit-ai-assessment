@@ -239,6 +239,7 @@ export class ArticleService {
     if (article && !article.coAuthors.isInitialized()) {
       await article.coAuthors.init();
     }
+    delete articleData.author;
 
     wrap(article).assign(articleData);
     await this.em.flush();
