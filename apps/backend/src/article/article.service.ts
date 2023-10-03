@@ -31,7 +31,7 @@ export class ArticleService {
     const user = userId
       ? await this.userRepository.findOne(userId, { populate: ['followers', 'favorites'] })
       : undefined;
-    const qb = this.articleRepository.createQueryBuilder('a').select('a.*').leftJoin('a.author', 'u').leftJoinAndSelect('a.coAuthors', 'coAuthors'); 
+    const qb = this.articleRepository.createQueryBuilder('a').select('a.*').leftJoinAndSelect('a.author', 'u').leftJoinAndSelect('a.coAuthors', 'coAuthors'); 
 
     if ('tag' in query) {
       qb.andWhere({ tagList: new RegExp(query.tag) });
