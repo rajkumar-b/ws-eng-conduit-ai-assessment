@@ -92,9 +92,8 @@ export const loadArticle$ = createEffect(
             const coAuthorsUsernames = article.coAuthors.map((coAuthor) => coAuthor.username);
 
             const authorProfile$ = profileService.getProfile(authorUsername);
-            const coAuthorsProfiles$ = combineLatest(
-              coAuthorsUsernames.map((username) => profileService.getProfile(username))
-            );
+            const coAuthorsProfiles$ = coAuthorsUsernames.length > 0
+              ? combineLatest(coAuthorsUsernames.map((username) => profileService.getProfile(username))) : of([]); 
 
             return combineLatest([of(article), authorProfile$, coAuthorsProfiles$]).pipe(
               map(([article, authorProfile, coAuthorsProfiles]) => {
